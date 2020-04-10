@@ -50,16 +50,19 @@ class test_not_auth(TestCase):  # Неавторизованный посети�
         self.assertRedirects(response, '/')
 
 
-#class test_image(TestCase):
-    #def setUp(self):
-        #self.client = Client()
-        #self.user = User.objects.create_user(
-                        #username="sarah", email="connor.s@skynet.com", password="12345")
+class test_image(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+                        username="sarah", email="connor.s@skynet.com", password="12345")
 
-    #def test_img(self):
-        #self.client.login(username='sarah', password='12345')
-        #with open('file.ext') as fp:
-            #c.post(reverse('new_post'), {'text': 'FirstPost'}, follow=True)
+    def test_img(self):
+        self.client.login(username='sarah', password='12345')
+        with open('media/posts/image.png', 'rb') as fp:
+            #self.client.login(username='sarah', password='12345')
+            self.client.post(reverse('new_post'), {'text': 'FirstPost', 'image': fp})
+            response = self.client.get('/')
+            self.assertContains(response, 'img', status_code=200, msg_prefix="")
 
 
 class test_follow(TestCase):
@@ -82,11 +85,32 @@ class test_follow(TestCase):
         self.assertContains(response, text='Текст поста', status_code=200)  # Новая запись пользователя не появляется в ленте тех, кто не подписан на него.
 
 
-class test_comment(TestCase):
+class test_comment(TestCase):  # Комментарий может оставлять только авторизованный пользователь
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(
+        self.client1 = Client()
+        self.user1 = User.objects.create_user(
                         username="sarah", email="connor.s@skynet.com", password="12345")
+        self.client2 = Client()
+        self.user2 = User.objects.create_user(
+                        username="volkov", email="volkov@skynet.com", password="12345") 
+        self.client3 = Client()                
 
     def test_cmnt(self):
-        self.client.login(username='sarah', password='12345')                    
+        self.client1.login(username='sarah', password='12345')
+        self.client2.login(username='volkov', password='12345')
+        self.client2.post(reverse('new_post'), {'text': 'Текст поста'}, follow=True)
+        self.client1.post(reverse('post', kwargs={"username": "volkov", 'post_id': "1"}), {"text": "комментарий"})        
+        response = self.client.get(reverse('post', kwargs={"username": "volkov", 'post_id': "1"}))
+        self.assertContains(response, text='комментарий', status_code=200)
+        self.client3.post(reverse('post', kwargs={"username": "volkov", 'post_id': "1"}), {"text": "комментарий неавторизованного пользователя"})
+        response = self.client.get(reverse('post', kwargs={"username": "volkov", 'post_id': "1"}))
+        self.assertNotContains(response, text='комментарий неавторизованного пользователя', status_code=200)
+
+
+class test_error_404(TestCase):  # Проверка на ошибку 404
+    def SetUp(self):
+        self.client = Client()
+
+    def test_404(self):
+        response = self.client.get("/not_found/")
+        self.assertEqual(response.status_code, 404)

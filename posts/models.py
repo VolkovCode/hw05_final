@@ -35,3 +35,4 @@ class Follow(models.Model):
     
     def __str__(self):
         return f'follower - {self.user} following - {self.author}'
+        

@@ -5,7 +5,7 @@ from .models import Post, Group, User, Comment, Follow
 from .forms import PostForm, CommentForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
-import random
+
 
 #@cache_page(60*15)
 def index(request):
@@ -55,14 +55,12 @@ def profile(request, username):
         following = Follow.objects.filter(author=author, user=request.user)     
     else:
         following = []
-
     count = post_list.count
     return render(request, "posts/profile.html", {'count':count, 'author':author, 'page': page, 
                   'paginator': paginator, 'count_followers': count_followers, 
                   "following": following, 'count_followering': count_followering, 'first_post': first_post})
 
    
-  
 def post_view(request, username, post_id):
     profile = get_object_or_404(User, username=username)
     post = get_object_or_404(Post, author=profile.pk, id=post_id)
@@ -103,8 +101,7 @@ def add_comment(request, username, post_id):
         return render(request, "posts/post.html", {'form': form, 'post':post})    
     form = CommentForm()
     return render(request, "posts/comment.html", {"post": post, "form": form, 'comments': comments})
-    #return redirect('post', username=post.author.username, post_id=post_id,)
-
+    
 
 def page_not_found(request, exception):
     # Переменная exception содержит отладочную информацию, 
@@ -130,12 +127,15 @@ def follow_index(request):
 def profile_follow(request, username):
     author = get_object_or_404(User, username = username)
     user = request.user   
-    if author not in list(Follow.objects.filter(user=request.user).values_list('author', flat=True)):
+    following = Follow.objects.filter(user=user).filter(author=author)
+    if not following: 
         if user != author:
             Follow.objects.create(user=user, author=author)   
             return redirect("profile", username=username)
         else:
-            return redirect("profile", username=username)        
+            return redirect("profile", username=username)
+    else:
+        return redirect("profile", username=username)                
     
 
 @login_required
