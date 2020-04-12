@@ -4,10 +4,8 @@ from django.shortcuts import redirect
 from .models import Post, Group, User, Comment, Follow
 from .forms import PostForm, CommentForm
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import cache_page
 
 
-#@cache_page(60*15)
 def index(request):
     post_list = Post.objects.order_by("-pub_date").all()
     paginator = Paginator(post_list, 10) # показывать по 10 записей на странице.
@@ -78,9 +76,7 @@ def post_edit(request, username, post_id):
         return redirect("post", username, post_id)
     form = PostForm(request.POST or None, files=request.FILES or None, instance=post)
     if form.is_valid():
-        post.text = form.cleaned_data['text']
-        post.group = form.cleaned_data['group']
-        post.save()
+        form.save()
         return redirect("post", username, post_id)
     form = PostForm()
     return render(request, "posts/post_edit.html", {"form": form, 'post':post})    

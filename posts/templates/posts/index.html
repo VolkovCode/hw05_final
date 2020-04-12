@@ -9,15 +9,16 @@
 
     <div class="table">
         <h1> Последние обновления на сайте</h1>
+        {% load cache %} 
+        {% cache 20 index_page page %}    
+            {% for post in page %}
+                {% include "posts/post_item.html" with post=post %}
+            {% endfor %}
 
-        {% for post in page %}
-            {% include "posts/post_item.html" with post=post %}
-        {% endfor %}
-
-        {% if page.has_other_pages %}
-            {% include "posts/paginator.html" with items=page paginator=paginator%}
-        {% endif %}
-
+            {% if page.has_other_pages %}
+                {% include "posts/paginator.html" with items=page paginator=paginator%}
+            {% endif %}
+        {% endcache %} 
     </div>
 </main>
 {% endblock %}
